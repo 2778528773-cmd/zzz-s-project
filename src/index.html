@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Donezo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="window-drag-region" aria-hidden="true"></div>
+    <main class="app">
+      <aside class="sidebar">
+        <section class="brand">
+          <div class="brand-icon">✓</div>
+          <div class="brand-copy">
+            <h1>Donezo</h1>
+            <p id="todayText">今天</p>
+          </div>
+        </section>
+
+        <nav class="nav" aria-label="任务筛选">
+          <button class="nav-item active" type="button" data-view="all">
+            <span class="nav-icon" aria-hidden="true">☰</span>
+            <span>全部</span>
+            <strong id="allCount">0</strong>
+          </button>
+          <button class="nav-item" type="button" data-view="today">
+            <span class="nav-icon" aria-hidden="true">◷</span>
+            <span>今天</span>
+            <strong id="todayCount">0</strong>
+          </button>
+          <button class="nav-item" type="button" data-view="open">
+            <span class="nav-icon" aria-hidden="true">•</span>
+            <span>进行中</span>
+            <strong id="openCount">0</strong>
+          </button>
+          <button class="nav-item" type="button" data-view="done">
+            <span class="nav-icon" aria-hidden="true">✓</span>
+            <span>已完成</span>
+            <strong id="doneCount">0</strong>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <section class="summary" aria-label="完成进度">
+            <p class="completion-detail">
+              <span>完成情况</span>
+              <strong id="completionDetail">0/0（0%）</strong>
+            </p>
+            <div class="completion-toggle" aria-label="完成率范围">
+              <button class="completion-mode active" type="button" data-completion-mode="all">全部</button>
+              <button class="completion-mode" type="button" data-completion-mode="today">今日</button>
+            </div>
+            <div class="meter"><span id="completionBar"></span></div>
+          </section>
+          <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="收起侧边栏" title="收起侧边栏">
+            <span aria-hidden="true">‹</span>
+          </button>
+        </div>
+      </aside>
+
+      <section class="content">
+        <header class="topbar">
+          <div>
+            <h2 id="viewTitle">全部任务</h2>
+            <p id="viewHint">把想做的事放到这里，然后一件件完成。</p>
+          </div>
+          <div class="view-tools">
+            <div class="display-toggle" aria-label="展示方式">
+              <button class="display-mode active" type="button" data-display-mode="list" aria-label="列表视图" title="列表视图">
+                <span aria-hidden="true">☰</span>
+              </button>
+              <button class="display-mode" type="button" data-display-mode="quadrant" aria-label="象限视图" title="象限视图">
+                <span aria-hidden="true">⊞</span>
+              </button>
+            </div>
+            <label class="search">
+              <span aria-hidden="true">⌕</span>
+              <input id="searchInput" type="search" placeholder="搜索任务" />
+            </label>
+          </div>
+        </header>
+
+        <form id="taskForm" class="task-form">
+          <label class="form-field task-title-field">
+            <span aria-hidden="true">+</span>
+            <input id="titleInput" type="text" placeholder="任务名称" maxlength="120" required />
+          </label>
+          <label class="form-field">
+            <span aria-hidden="true">#</span>
+            <input id="projectInput" type="text" placeholder="项目" maxlength="32" />
+          </label>
+          <div class="date-picker">
+            <label class="form-field date-field" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="calendarPopover">
+              <span aria-hidden="true">◷</span>
+              <strong id="dateDisplay">时间</strong>
+              <input id="dateInput" type="hidden" aria-label="截止日期" />
+            </label>
+            <div id="calendarPopover" class="calendar-popover hidden" aria-label="选择日期">
+              <header class="calendar-head">
+                <button id="calendarPrev" type="button" aria-label="上个月">‹</button>
+                <strong id="calendarMonth"></strong>
+                <button id="calendarNext" type="button" aria-label="下个月">›</button>
+              </header>
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>一</span>
+                <span>二</span>
+                <span>三</span>
+                <span>四</span>
+                <span>五</span>
+                <span>六</span>
+                <span>日</span>
+              </div>
+              <div id="calendarGrid" class="calendar-grid"></div>
+              <footer class="calendar-actions">
+                <button id="calendarToday" type="button">今天</button>
+                <button id="calendarClear" type="button">清除</button>
+              </footer>
+            </div>
+          </div>
+          <div class="quadrant-toggle" role="group" aria-label="四象限">
+            <label class="quadrant-chip">
+              <input id="importantInput" type="checkbox" />
+              <span>重要</span>
+            </label>
+            <label class="quadrant-chip">
+              <input id="urgentInput" type="checkbox" />
+              <span>紧急</span>
+            </label>
+          </div>
+          <button class="add-button" type="submit">
+            <span aria-hidden="true">+</span>
+            新增
+          </button>
+        </form>
+
+        <p id="dailyEncouragement" class="daily-encouragement hidden">今天的任务都完成了，做得很稳。</p>
+
+        <section class="task-area">
+          <ul id="taskList" class="task-list"></ul>
+          <div id="quadrantBoard" class="quadrant-board hidden" aria-label="四象限任务区"></div>
+          <div id="emptyState" class="empty-state">
+            <h3>这里很清爽</h3>
+            <p>添加一个任务，或者换个筛选看看。</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="taskTemplate">
+      <li class="task-item">
+        <button class="check-button" type="button" aria-label="切换完成状态"></button>
+        <div class="task-content">
+          <input class="task-title" type="text" />
+          <textarea class="task-notes" rows="1" placeholder="备注"></textarea>
+          <div class="task-meta">
+            <span class="project-pill"></span>
+            <span class="priority-pill"></span>
+            <button class="due-button" type="button" aria-label="截止日期">
+              <span aria-hidden="true">◷</span>
+              <strong></strong>
+            </button>
+          </div>
+        </div>
+        <button class="delete-button" type="button" aria-label="删除任务">×</button>
+      </li>
+    </template>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

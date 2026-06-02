@@ -1,0 +1,53 @@
+{
+  "name": "mac-todolist",
+  "version": "0.2.0",
+  "description": "A focused macOS desktop TodoList app.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
+    "lint": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
+    "icon": "node scripts/generate-icon.js",
+    "prepare:dist": "mkdir -p outputs .electron-cache .builder-cache .npm-cache",
+    "dist": "npm run prepare:dist && npm run icon && npm run check && ELECTRON_CACHE=$PWD/.electron-cache ELECTRON_BUILDER_CACHE=$PWD/.builder-cache electron_config_cache=$PWD/.electron-cache npm_config_cache=$PWD/.npm-cache electron-builder --mac dmg --publish never"
+  },
+  "keywords": [
+    "todo",
+    "electron",
+    "macos"
+  ],
+  "author": "",
+  "license": "MIT",
+  "build": {
+    "appId": "com.donezo.todolist",
+    "productName": "Donezo",
+    "directories": {
+      "output": "outputs"
+    },
+    "asar": true,
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "files": [
+      "src/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "identity": null,
+      "target": [
+        "dmg"
+      ]
+    },
+    "dmg": {
+      "title": "Donezo ${version}",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "ajv": "^6.15.0",
+    "electron": "^42.3.0",
+    "electron-builder": "^26.0.12"
+  }
+}

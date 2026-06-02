@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+outputs/
+.electron-cache/
+.builder-cache/
+.npm-cache/
+work/
+
+*.log
+npm-debug.log*
+
