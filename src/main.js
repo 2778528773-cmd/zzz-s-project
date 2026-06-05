@@ -37,10 +37,10 @@ function seedTasks() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1040,
-    height: 720,
-    minWidth: 820,
-    minHeight: 560,
+    width: 1120,
+    height: 760,
+    minWidth: 1120,
+    minHeight: 760,
     title: 'Donezo',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },

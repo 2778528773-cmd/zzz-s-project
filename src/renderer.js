@@ -6,7 +6,9 @@ const state = {
   query: '',
   completionMode: localStorage.getItem('donezo:completionMode') || 'all',
   displayMode: localStorage.getItem('donezo:displayMode') || 'list',
-  sidebarCollapsed: localStorage.getItem('donezo:sidebarCollapsed') === 'true'
+  sidebarCollapsed: localStorage.getItem('donezo:sidebarCollapsed') === 'true',
+  theme: localStorage.getItem('donezo:theme') || 'system',
+  settingsOpen: false
 };
 
 const els = {
@@ -18,7 +20,7 @@ const els = {
   viewHint: document.querySelector('#viewHint'),
   taskForm: document.querySelector('#taskForm'),
   titleInput: document.querySelector('#titleInput'),
-  projectInput: document.querySelector('#projectInput'),
+  formErrorText: document.querySelector('#formErrorText'),
   dateInput: document.querySelector('#dateInput'),
   dateField: document.querySelector('.date-field'),
   dateDisplay: document.querySelector('#dateDisplay'),
@@ -32,6 +34,8 @@ const els = {
   importantInput: document.querySelector('#importantInput'),
   urgentInput: document.querySelector('#urgentInput'),
   searchInput: document.querySelector('#searchInput'),
+  settingsToggle: document.querySelector('#settingsToggle'),
+  settingsPanel: document.querySelector('#settingsPanel'),
   dailyEncouragement: document.querySelector('#dailyEncouragement'),
   taskList: document.querySelector('#taskList'),
   quadrantBoard: document.querySelector('#quadrantBoard'),
@@ -45,7 +49,8 @@ const els = {
   doneCount: document.querySelector('#doneCount'),
   navItems: [...document.querySelectorAll('.nav-item')],
   completionModes: [...document.querySelectorAll('.completion-mode')],
-  displayModes: [...document.querySelectorAll('.display-mode')]
+  displayModes: [...document.querySelectorAll('.display-mode')],
+  themeOptions: [...document.querySelectorAll('.theme-option')]
 };
 
 document.body.appendChild(els.calendarPopover);
@@ -82,7 +87,7 @@ const legacyPriorityMap = {
 };
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateISO(new Date());
 }
 
 function formatDateDisplay(value) {
@@ -199,6 +204,31 @@ function syncCalendarPosition() {
   positionCalendar(anchor);
 }
 
+function applyTheme() {
+  document.documentElement.dataset.theme = state.theme;
+  for (const option of els.themeOptions) {
+    option.classList.toggle('active', option.dataset.themeOption === state.theme);
+  }
+}
+
+function renderSettingsState() {
+  els.settingsPanel.classList.toggle('hidden', !state.settingsOpen);
+  els.settingsToggle.setAttribute('aria-expanded', String(state.settingsOpen));
+  els.settingsToggle.classList.toggle('active', state.settingsOpen);
+}
+
+function triggerFieldShake(field) {
+  field.classList.remove('field-shake');
+  field.getBoundingClientRect();
+  field.classList.add('field-shake');
+}
+
+function setTitleValidationError(message = '') {
+  const hasError = Boolean(message);
+  els.titleInput.setAttribute('aria-invalid', String(hasError));
+  els.formErrorText.textContent = message;
+}
+
 function quadrantFromFlags(isImportant, isUrgent) {
   if (isImportant && isUrgent) return 'q1';
   if (isImportant) return 'q2';
@@ -262,27 +292,8 @@ function updateCounts() {
   }
 }
 
-function renderTask(task) {
-  const node = els.taskTemplate.content.firstElementChild.cloneNode(true);
-  const checkButton = node.querySelector('.check-button');
-  const titleInput = node.querySelector('.task-title');
-  const notesInput = node.querySelector('.task-notes');
-  const projectPill = node.querySelector('.project-pill');
-  const priorityPill = node.querySelector('.priority-pill');
-  const dueButton = node.querySelector('.due-button');
-  const dueButtonLabel = dueButton.querySelector('strong');
-  const deleteButton = node.querySelector('.delete-button');
-
-  node.classList.toggle('completed', task.completed);
-  titleInput.value = task.title;
-  notesInput.value = task.notes || '';
-  projectPill.textContent = task.project || 'Inbox';
-  const quadrant = normalizeQuadrant(task.priority);
-  priorityPill.textContent = quadrantCopy[quadrant];
-  priorityPill.classList.add(`priority-${quadrant}`);
-  dueButtonLabel.textContent = task.dueDate ? task.dueDate.replaceAll('-', '/') : '时间';
-  dueButton.setAttribute('aria-expanded', 'false');
-
+function bindTaskEditing(task, options) {
+  const { checkButton, titleInput, notesInput, deleteButton, dueButton } = options;
   checkButton.addEventListener('click', async () => {
     task.completed = !task.completed;
     task.updatedAt = new Date().toISOString();
@@ -304,15 +315,81 @@ function renderTask(task) {
     render();
   });
 
-  dueButton.addEventListener('click', () => {
-    openCalendar(dueButton, { type: 'task', task, button: dueButton });
-  });
+  if (dueButton) {
+    dueButton.addEventListener('click', () => {
+      openCalendar(dueButton, { type: 'task', task, button: dueButton });
+    });
+  }
 
   deleteButton.addEventListener('click', async () => {
     state.tasks = state.tasks.filter((item) => item.id !== task.id);
     await save();
     render();
   });
+}
+
+function renderTask(task) {
+  const node = els.taskTemplate.content.firstElementChild.cloneNode(true);
+  const checkButton = node.querySelector('.check-button');
+  const titleInput = node.querySelector('.task-title');
+  const notesInput = node.querySelector('.task-notes');
+  const projectPill = node.querySelector('.project-pill');
+  const priorityPill = node.querySelector('.priority-pill');
+  const dueButton = node.querySelector('.due-button');
+  const dueButtonLabel = dueButton.querySelector('strong');
+  const deleteButton = node.querySelector('.delete-button');
+
+  node.classList.toggle('completed', task.completed);
+  titleInput.value = task.title;
+  notesInput.value = task.notes || '';
+  notesInput.rows = 1;
+  projectPill.textContent = task.project || 'Inbox';
+  const quadrant = normalizeQuadrant(task.priority);
+  priorityPill.textContent = quadrantCopy[quadrant];
+  priorityPill.classList.add(`priority-${quadrant}`);
+  dueButtonLabel.textContent = task.dueDate ? task.dueDate.replaceAll('-', '/') : '时间';
+  dueButton.setAttribute('aria-expanded', 'false');
+
+  bindTaskEditing(task, { node, checkButton, titleInput, notesInput, deleteButton, dueButton });
+
+  return node;
+}
+
+function renderQuadrantTask(task) {
+  const node = document.createElement('li');
+  const checkButton = document.createElement('button');
+  const content = document.createElement('div');
+  const titleInput = document.createElement('input');
+  const notesInput = document.createElement('textarea');
+  const deleteButton = document.createElement('button');
+
+  node.className = 'quadrant-task';
+  node.classList.toggle('completed', task.completed);
+
+  checkButton.type = 'button';
+  checkButton.className = 'quadrant-task-check check-button';
+  checkButton.setAttribute('aria-label', '切换完成状态');
+
+  content.className = 'quadrant-task-content';
+
+  titleInput.type = 'text';
+  titleInput.className = 'quadrant-task-title';
+  titleInput.value = task.title;
+
+  notesInput.className = 'quadrant-task-notes';
+  notesInput.rows = 1;
+  notesInput.placeholder = '备注';
+  notesInput.value = task.notes || '';
+
+  deleteButton.type = 'button';
+  deleteButton.className = 'quadrant-task-delete delete-button';
+  deleteButton.setAttribute('aria-label', '删除任务');
+  deleteButton.textContent = '×';
+
+  content.append(titleInput, notesInput);
+  node.append(checkButton, content, deleteButton);
+
+  bindTaskEditing(task, { node, checkButton, titleInput, notesInput, deleteButton });
 
   return node;
 }
@@ -344,11 +421,27 @@ function renderQuadrantBoard(tasks) {
     count.textContent = quadrantTasks.length;
     hint.textContent = quadrantHint[quadrant];
 
+    column.classList.toggle('is-empty', quadrantTasks.length === 0);
     header.append(title, count);
     column.append(header, hint, list);
 
-    for (const task of quadrantTasks) {
-      list.appendChild(renderTask(task));
+    if (quadrantTasks.length === 0) {
+      const empty = document.createElement('div');
+      const emptyEyebrow = document.createElement('span');
+      const emptyText = document.createElement('p');
+
+      empty.className = 'quadrant-empty';
+      emptyEyebrow.className = 'quadrant-empty-mark';
+      emptyText.className = 'quadrant-empty-text';
+      emptyEyebrow.textContent = '空';
+      emptyText.textContent = '这里暂时没有任务';
+
+      empty.append(emptyEyebrow, emptyText);
+      list.append(empty);
+    } else {
+      for (const task of quadrantTasks) {
+        list.appendChild(renderQuadrantTask(task));
+      }
     }
 
     els.quadrantBoard.appendChild(column);
@@ -361,6 +454,7 @@ function render() {
 
   els.viewTitle.textContent = title;
   els.viewHint.textContent = hint;
+  els.taskList.closest('.task-area').classList.toggle('quadrant-mode', state.displayMode === 'quadrant');
   els.emptyState.classList.toggle('hidden', tasks.length > 0);
   els.taskList.classList.toggle('hidden', state.displayMode !== 'list' || tasks.length === 0);
   els.quadrantBoard.classList.toggle('hidden', state.displayMode !== 'quadrant' || tasks.length === 0);
@@ -393,13 +487,19 @@ function renderSidebarState() {
 els.taskForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const title = els.titleInput.value.trim();
-  if (!title) return;
+  if (!title) {
+    setTitleValidationError('请填写任务名称');
+    triggerFieldShake(els.titleInput.closest('.form-field'));
+    els.titleInput.focus();
+    return;
+  }
 
+  setTitleValidationError('');
   state.tasks.unshift({
     id: crypto.randomUUID(),
     title,
     notes: '',
-    project: els.projectInput.value.trim() || 'Inbox',
+    project: 'Inbox',
     dueDate: els.dateInput.value,
     priority: quadrantFromFlags(els.importantInput.checked, els.urgentInput.checked),
     completed: false,
@@ -412,6 +512,16 @@ els.taskForm.addEventListener('submit', async (event) => {
   await save();
   render();
   els.titleInput.focus();
+});
+
+els.titleInput.closest('.form-field').addEventListener('animationend', (event) => {
+  event.currentTarget.classList.remove('field-shake');
+});
+
+els.titleInput.addEventListener('input', () => {
+  if (els.titleInput.value.trim()) {
+    setTitleValidationError('');
+  }
 });
 
 els.dateInput.addEventListener('change', updateDateDisplay);
@@ -458,13 +568,38 @@ document.addEventListener('click', (event) => {
   closeCalendar();
 });
 
-els.content.addEventListener('scroll', syncCalendarPosition, { passive: true });
-window.addEventListener('scroll', syncCalendarPosition, { passive: true });
+document.addEventListener('click', (event) => {
+  if (!state.settingsOpen) return;
+  if (els.settingsPanel.contains(event.target) || els.settingsToggle.contains(event.target)) return;
+  state.settingsOpen = false;
+  renderSettingsState();
+});
+
+document.addEventListener('scroll', syncCalendarPosition, { passive: true, capture: true });
 window.addEventListener('resize', syncCalendarPosition);
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeCalendar();
+    if (state.settingsOpen) {
+      state.settingsOpen = false;
+      renderSettingsState();
+    }
+  }
+});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (state.theme === 'system') {
+    applyTheme();
+  }
+});
 
 els.searchInput.addEventListener('input', () => {
   state.query = els.searchInput.value.trim();
   render();
+});
+
+els.settingsToggle.addEventListener('click', () => {
+  state.settingsOpen = !state.settingsOpen;
+  renderSettingsState();
 });
 
 for (const item of els.navItems) {
@@ -496,6 +631,16 @@ els.sidebarToggle.addEventListener('click', () => {
   renderSidebarState();
 });
 
+for (const option of els.themeOptions) {
+  option.addEventListener('click', () => {
+    state.theme = option.dataset.themeOption;
+    localStorage.setItem('donezo:theme', state.theme);
+    applyTheme();
+    state.settingsOpen = false;
+    renderSettingsState();
+  });
+}
+
 async function boot() {
   els.todayText.textContent = new Intl.DateTimeFormat('zh-CN', {
     month: 'long',
@@ -503,8 +648,10 @@ async function boot() {
     weekday: 'long'
   }).format(new Date());
   state.tasks = await api.listTasks();
+  applyTheme();
   updateDateDisplay();
   renderSidebarState();
+  renderSettingsState();
   render();
   els.titleInput.focus();
 }

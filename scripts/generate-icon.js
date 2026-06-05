@@ -82,26 +82,26 @@ for (let y = 0; y < size; y += 1) {
     const baseAlpha = roundedRectAlpha(x, y, rect, 184);
     if (baseAlpha > 0) {
       const t = (x * 0.34 + y * 0.66) / size;
-      r = mix(82, 57, t);
-      g = mix(94, 66, t);
-      b = mix(110, 79, t);
+      r = mix(95, 51, t);
+      g = mix(186, 132, t);
+      b = mix(255, 233, t);
       a = 255 * baseAlpha;
 
       const shine = Math.max(0, 1 - Math.hypot((x - 330) / 360, (y - 260) / 260));
-      r = mix(r, 110, shine * 0.18);
-      g = mix(g, 124, shine * 0.18);
-      b = mix(b, 142, shine * 0.18);
+      r = mix(r, 188, shine * 0.24);
+      g = mix(g, 224, shine * 0.22);
+      b = mix(b, 255, shine * 0.18);
 
       const inner = roundedRectAlpha(x, y, { x: 182, y: 164, w: 660, h: 660 }, 166);
       const border = Math.max(0, baseAlpha - inner);
-      r = mix(r, 255, border * 0.16);
-      g = mix(g, 255, border * 0.16);
-      b = mix(b, 255, border * 0.16);
+      r = mix(r, 255, border * 0.22);
+      g = mix(g, 255, border * 0.22);
+      b = mix(b, 255, border * 0.22);
 
       const glass = Math.max(0, 1 - Math.hypot((x - 456) / 470, (y - 396) / 360));
-      r = mix(r, 255, glass * 0.08);
-      g = mix(g, 255, glass * 0.08);
-      b = mix(b, 255, glass * 0.08);
+      r = mix(r, 255, glass * 0.1);
+      g = mix(g, 255, glass * 0.1);
+      b = mix(b, 255, glass * 0.1);
     }
 
     const shadow = checkAlpha(x, y - 20, 92);

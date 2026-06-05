@@ -78,17 +78,32 @@
               <span aria-hidden="true">⌕</span>
               <input id="searchInput" type="search" placeholder="搜索任务" />
             </label>
+            <div class="settings-wrap">
+              <button id="settingsToggle" class="icon-button" type="button" aria-label="设置" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel" title="设置">
+                <span aria-hidden="true">⚙</span>
+              </button>
+              <section id="settingsPanel" class="settings-panel app-layer app-layer-panel hidden" aria-label="设置面板">
+                <div class="settings-head">
+                  <strong>设置</strong>
+                  <p>主题已经可以独立控制，后续选项也可以继续放这里。</p>
+                </div>
+                <div class="settings-group">
+                  <span class="settings-label">外观</span>
+                  <div class="theme-options" role="group" aria-label="主题">
+                    <button class="theme-option" type="button" data-theme-option="system">跟随系统</button>
+                    <button class="theme-option" type="button" data-theme-option="light">浅色</button>
+                    <button class="theme-option" type="button" data-theme-option="dark">深色</button>
+                  </div>
+                </div>
+              </section>
+            </div>
           </div>
         </header>
 
-        <form id="taskForm" class="task-form">
+        <form id="taskForm" class="task-form" novalidate>
           <label class="form-field task-title-field">
             <span aria-hidden="true">+</span>
-            <input id="titleInput" type="text" placeholder="任务名称" maxlength="120" required />
-          </label>
-          <label class="form-field">
-            <span aria-hidden="true">#</span>
-            <input id="projectInput" type="text" placeholder="项目" maxlength="32" />
+            <input id="titleInput" type="text" placeholder="任务名称" maxlength="120" aria-describedby="formErrorText" />
           </label>
           <div class="date-picker">
             <label class="form-field date-field" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="calendarPopover">
@@ -96,7 +111,7 @@
               <strong id="dateDisplay">时间</strong>
               <input id="dateInput" type="hidden" aria-label="截止日期" />
             </label>
-            <div id="calendarPopover" class="calendar-popover hidden" aria-label="选择日期">
+            <div id="calendarPopover" class="calendar-popover app-layer app-layer-popover hidden" aria-label="选择日期">
               <header class="calendar-head">
                 <button id="calendarPrev" type="button" aria-label="上个月">‹</button>
                 <strong id="calendarMonth"></strong>
@@ -133,7 +148,7 @@
             新增
           </button>
         </form>
-
+        <p id="formErrorText" class="sr-only" aria-live="polite"></p>
         <p id="dailyEncouragement" class="daily-encouragement hidden">今天的任务都完成了，做得很稳。</p>
 
         <section class="task-area">
